@@ -6,6 +6,7 @@ import consola from "consola"
 import { serve, type ServerHandler } from "srvx"
 import invariant from "tiny-invariant"
 
+import { type ContextTier, parseContextTier } from "./lib/context-tier"
 import { ensurePaths } from "./lib/paths"
 import { initProxyFromEnv } from "./lib/proxy"
 import { generateEnvScript } from "./lib/shell"
@@ -18,6 +19,7 @@ interface RunServerOptions {
   port: number
   verbose: boolean
   accountType: string
+  contextTier: ContextTier
   manual: boolean
   rateLimit?: number
   rateLimitWait: boolean
@@ -40,6 +42,11 @@ export async function runServer(options: RunServerOptions): Promise<void> {
   state.accountType = options.accountType
   if (options.accountType !== "individual") {
     consola.info(`Using ${options.accountType} plan GitHub account`)
+  }
+
+  state.contextTier = options.contextTier
+  if (options.contextTier !== "default") {
+    consola.info(`Using ${options.contextTier} context tier`)
   }
 
   state.manualApprove = options.manual
@@ -151,6 +158,11 @@ export const start = defineCommand({
       default: "individual",
       description: "Account type to use (individual, business, enterprise)",
     },
+    "context-tier": {
+      type: "string",
+      default: "default",
+      description: "Context tier to advertise (default, long_context)",
+    },
     manual: {
       type: "boolean",
       default: false,
@@ -202,6 +214,7 @@ export const start = defineCommand({
       port: Number.parseInt(args.port, 10),
       verbose: args.verbose,
       accountType: args["account-type"],
+      contextTier: parseContextTier(args["context-tier"]),
       manual: args.manual,
       rateLimit,
       rateLimitWait: args.wait,

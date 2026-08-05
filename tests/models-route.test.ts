@@ -4,6 +4,7 @@ import type { ModelsResponse } from "~/services/copilot/get-models"
 
 import { state } from "~/lib/state"
 import { server } from "~/server"
+import { applyContextTier } from "~/services/copilot/apply-context-tier"
 
 const originalModels = state.models
 
@@ -12,8 +13,8 @@ afterEach(() => {
 })
 
 describe("models route", () => {
-  test("preserves routing and capability metadata", async () => {
-    state.models = {
+  test("preserves routing and projected capability metadata", async () => {
+    const catalog = {
       object: "list",
       data: [
         {
@@ -26,6 +27,9 @@ describe("models route", () => {
           model_picker_enabled: true,
           model_picker_category: "powerful",
           supported_endpoints: ["/responses", "ws:/responses"],
+          billing: {
+            token_prices: { long_context: { context_max: 922_000 } },
+          },
           capabilities: {
             family: "gpt-5.6-terra",
             object: "model_capabilities",
@@ -33,6 +37,8 @@ describe("models route", () => {
             type: "chat",
             limits: {
               max_context_window_tokens: 400_000,
+              max_output_tokens: 128_000,
+              max_prompt_tokens: 272_000,
             },
             supports: {
               reasoning_effort: [
@@ -53,6 +59,7 @@ describe("models route", () => {
         },
       ],
     } satisfies ModelsResponse
+    state.models = applyContextTier(catalog, "long_context").catalog
 
     const response = await server.request("/v1/models")
 
@@ -67,7 +74,9 @@ describe("models route", () => {
       supported_endpoints: ["/responses", "ws:/responses"],
       capabilities: {
         limits: {
-          max_context_window_tokens: 400_000,
+          max_context_window_tokens: 1_050_000,
+          max_output_tokens: 128_000,
+          max_prompt_tokens: 922_000,
         },
         supports: {
           reasoning_effort: ["none", "low", "medium", "high", "xhigh", "max"],

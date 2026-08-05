@@ -17,11 +17,12 @@ export interface ModelsResponse {
   object: string
 }
 
-interface ModelLimits {
+export interface ModelLimits {
   max_context_window_tokens?: number
   max_output_tokens?: number
   max_prompt_tokens?: number
   max_inputs?: number
+  [limit: string]: unknown
 }
 
 interface ModelSupports {
@@ -34,15 +35,33 @@ interface ModelSupports {
 
 interface ModelCapabilities {
   family: string
-  limits: ModelLimits
+  limits?: ModelLimits
   object: string
   supports: ModelSupports
   tokenizer: string
   type: string
+  [capability: string]: unknown
+}
+
+interface ModelBillingContextTier {
+  context_max?: number
+  [property: string]: unknown
+}
+
+interface ModelBillingTokenPrices {
+  default?: ModelBillingContextTier
+  long_context?: ModelBillingContextTier
+  [tier: string]: ModelBillingContextTier | undefined
+}
+
+interface ModelBilling {
+  token_prices?: ModelBillingTokenPrices
+  [property: string]: unknown
 }
 
 export interface Model {
-  capabilities: ModelCapabilities
+  billing?: ModelBilling
+  capabilities?: ModelCapabilities
   id: string
   model_picker_enabled: boolean
   model_picker_category?: string
@@ -56,4 +75,5 @@ export interface Model {
     state: string
     terms: string
   }
+  [property: string]: unknown
 }

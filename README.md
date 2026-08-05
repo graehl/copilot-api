@@ -39,6 +39,7 @@ A reverse-engineered proxy for the GitHub Copilot API that exposes it as an Open
 - **Token Visibility**: Option to display GitHub and Copilot tokens during authentication and refresh for debugging (`--show-token`).
 - **Flexible Authentication**: Authenticate interactively or provide a GitHub token directly, suitable for CI/CD environments.
 - **Support for Different Account Types**: Works with individual, business, and enterprise GitHub Copilot plans.
+- **Catalog-Derived Context Tiers**: Optionally advertise long-context limits for models whose live Copilot catalog explicitly provides them (`--context-tier long_context`).
 
 ## Demo
 
@@ -156,6 +157,7 @@ The following command line options are available for the `start` command:
 | --port         | Port to listen on                                                             | 4141       | -p    |
 | --verbose      | Enable verbose logging                                                        | false      | -v    |
 | --account-type | Account type to use (individual, business, enterprise)                        | individual | -a    |
+| --context-tier | Context limits to advertise (`default` or `long_context`)                     | default    | none  |
 | --manual       | Enable manual request approval                                                | false      | none  |
 | --rate-limit   | Rate limit in seconds between requests                                        | none       | -r    |
 | --wait         | Wait instead of error when rate limit is hit                                  | false      | -w    |
@@ -163,6 +165,17 @@ The following command line options are available for the `start` command:
 | --claude-code  | Generate a command to launch Claude Code with Copilot API config              | false      | -c    |
 | --show-token   | Show GitHub and Copilot tokens on fetch and refresh                           | false      | none  |
 | --proxy-env    | Initialize proxy from environment variables                                   | false      | none  |
+
+`--context-tier default` preserves the catalog's normal limits. In
+`long_context` mode, the proxy derives each eligible model's prompt and total
+context limits from that model's live catalog metadata. Models without complete
+long-context metadata keep their normal limits. Startup fails when the catalog
+contains no usable long-context model, so an explicit request cannot silently
+become a no-op. GitHub does not expose billing metadata to every client
+identity; when this proxy's raw catalog omits it, the proxy fails rather than
+borrowing another client's metadata. This option changes the capabilities
+advertised by this proxy; it does not add an undocumented tier field to
+upstream inference requests.
 
 ### Auth Command Options
 
@@ -225,6 +238,9 @@ npx copilot-api@latest start --account-type business
 
 # Use with an enterprise plan GitHub account
 npx copilot-api@latest start --account-type enterprise
+
+# Advertise catalog-derived long-context limits where available
+npx copilot-api@latest start --context-tier long_context
 
 # Enable manual approval for each request
 npx copilot-api@latest start --manual
