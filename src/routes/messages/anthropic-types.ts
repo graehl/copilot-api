@@ -30,9 +30,23 @@ export interface AnthropicMessagesPayload {
   service_tier?: "auto" | "standard_only"
 }
 
+/**
+ * Prompt-cache breakpoint. Clients such as Claude Code place these on the
+ * system prompt, the tool list, and recent turns; the upstream Copilot
+ * `/v1/messages` endpoint honors them, including the `1h` tier. They are
+ * modeled here so the passthrough preserves them by contract rather than by
+ * accident -- a translation that rebuilt blocks from these types without the
+ * field would silently cost every caller a full re-prefill.
+ */
+export interface AnthropicCacheControl {
+  type: "ephemeral"
+  ttl?: "5m" | "1h"
+}
+
 export interface AnthropicTextBlock {
   type: "text"
   text: string
+  cache_control?: AnthropicCacheControl
 }
 
 export interface AnthropicImageBlock {
@@ -42,6 +56,7 @@ export interface AnthropicImageBlock {
     media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
     data: string
   }
+  cache_control?: AnthropicCacheControl
 }
 
 export interface AnthropicToolResultBlock {
@@ -49,6 +64,7 @@ export interface AnthropicToolResultBlock {
   tool_use_id: string
   content: string | Array<AnthropicTextBlock | AnthropicImageBlock>
   is_error?: boolean
+  cache_control?: AnthropicCacheControl
 }
 
 export interface AnthropicToolUseBlock {
@@ -56,6 +72,7 @@ export interface AnthropicToolUseBlock {
   id: string
   name: string
   input: Record<string, unknown>
+  cache_control?: AnthropicCacheControl
 }
 
 export interface AnthropicThinkingBlock {
@@ -115,6 +132,7 @@ export interface AnthropicClientTool {
   name: string
   description?: string
   input_schema: Record<string, unknown>
+  cache_control?: AnthropicCacheControl
 }
 
 export interface AnthropicWebSearchTool {

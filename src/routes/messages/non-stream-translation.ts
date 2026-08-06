@@ -25,6 +25,9 @@ import { mapOpenAIStopReasonToAnthropic } from "./utils"
 
 // Payload translation
 
+// `cache_control` breakpoints are dropped here on purpose: Chat Completions has
+// no equivalent field, and its upstream caches by automatic prefix match with no
+// marker. Only the native `/v1/messages` passthrough carries them through.
 export function translateToOpenAI(
   payload: AnthropicMessagesPayload,
 ): ChatCompletionsPayload {

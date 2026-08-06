@@ -5,6 +5,12 @@ import type {
 } from "~/routes/messages/anthropic-types"
 
 import { copilotBaseUrl, copilotHeaders } from "~/lib/api-config"
+import {
+  applyDefaultCacheTtl,
+  EXTENDED_CACHE_TTL_BETA,
+  resolveDefaultCacheTtl,
+  usesExtendedCacheTtl,
+} from "~/lib/cache-ttl"
 import { HTTPError } from "~/lib/error"
 import { state } from "~/lib/state"
 
@@ -30,6 +36,28 @@ function isAgentCall(payload: AnthropicMessagesPayload): boolean {
   )
 }
 
+function withExtendedTtlBeta(
+  headers: Record<string, string>,
+): Record<string, string> {
+  // The client's own casing wins when it already sent the header, so the
+  // forwarded request carries one anthropic-beta rather than two spellings.
+  const existing = Object.entries(headers).find(
+    ([name]) => name.toLowerCase() === "anthropic-beta",
+  )
+  const key = existing?.[0] ?? "anthropic-beta"
+  const flags = existing?.[1]
+  if (
+    flags?.split(",").some((flag) => flag.trim() === EXTENDED_CACHE_TTL_BETA)
+  ) {
+    return headers
+  }
+  return {
+    ...headers,
+    [key]:
+      flags ? `${flags},${EXTENDED_CACHE_TTL_BETA}` : EXTENDED_CACHE_TTL_BETA,
+  }
+}
+
 export async function createAnthropicMessages(
   payload: AnthropicMessagesPayload,
   forwardedHeaders: Record<string, string>,
@@ -37,14 +65,23 @@ export async function createAnthropicMessages(
 ): Promise<Response> {
   if (!state.copilotToken) throw new Error("Copilot token not found")
 
+  // Stamp the longest cache tier onto breakpoints the client left unqualified,
+  // then declare the beta that tier is gated behind. Everything else about the
+  // payload is forwarded byte-for-byte.
+  const sent = applyDefaultCacheTtl(payload, resolveDefaultCacheTtl())
+  const headers =
+    usesExtendedCacheTtl(sent) ?
+      withExtendedTtlBeta(forwardedHeaders)
+    : forwardedHeaders
+
   const response = await fetch(`${copilotBaseUrl(state)}/v1/messages${query}`, {
     method: "POST",
     headers: {
-      ...copilotHeaders(state, hasImage(payload)),
-      ...forwardedHeaders,
-      "X-Initiator": isAgentCall(payload) ? "agent" : "user",
+      ...copilotHeaders(state, hasImage(sent)),
+      ...headers,
+      "X-Initiator": isAgentCall(sent) ? "agent" : "user",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(sent),
   })
 
   if (!response.ok) {

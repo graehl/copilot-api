@@ -40,6 +40,10 @@ import type {
 
 const REASONING_SIGNATURE_SEPARATOR = "@"
 
+// As in the Chat Completions translation, `cache_control` breakpoints are
+// dropped deliberately: Responses has no equivalent field and caches by
+// automatic prefix match. `store: false` below keeps that the only caching
+// mechanism in play; no conversation state is retained upstream.
 export function translateAnthropicToResponses(
   payload: AnthropicMessagesPayload,
 ): ResponsesPayload {
