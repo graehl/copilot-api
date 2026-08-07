@@ -13,6 +13,8 @@ modelRoutes.get("/", async (c) => {
       await cacheModels()
     }
 
+    c.header("X-Copilot-API", "1")
+
     const models = state.models?.data.map((model) => ({
       id: model.id,
       object: "model",

@@ -64,6 +64,7 @@ describe("models route", () => {
     const response = await server.request("/v1/models")
 
     expect(response.status).toBe(200)
+    expect(response.headers.get("x-copilot-api")).toBe("1")
     const body = (await response.json()) as {
       data: Array<Record<string, unknown>>
     }

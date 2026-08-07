@@ -204,6 +204,10 @@ These endpoints mimic the OpenAI API structure.
 | `GET /v1/models`            | `GET`  | Lists the currently available models.                     |
 | `POST /v1/embeddings`       | `POST` | Creates an embedding vector representing the input text.  |
 
+`GET /v1/models` includes `X-Copilot-API: 1` so compatible clients can
+identify this proxy without inferring its implementation from model names,
+ports, or catalog contents.
+
 ### Anthropic Compatible Endpoints
 
 These endpoints are designed to be compatible with the Anthropic Messages API.
