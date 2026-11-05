@@ -21,19 +21,39 @@ export const copilotHeaders = (state: State, vision: boolean = false) => {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${state.copilotToken}`,
     "content-type": standardHeaders()["content-type"],
-    "copilot-integration-id": "vscode-chat",
-    "editor-version": `vscode/${state.vsCodeVersion}`,
-    "editor-plugin-version": EDITOR_PLUGIN_VERSION,
-    "user-agent": USER_AGENT,
-    "openai-intent": "conversation-panel",
-    "x-github-api-version": API_VERSION,
+    ...(state.cliProfile ? CLI_PROFILE_HEADERS : vscodeIdentityHeaders(state)),
     "x-request-id": randomUUID(),
-    "x-vscode-user-agent-library-version": "electron-fetch",
   }
 
   if (vision) headers["copilot-vision-request"] = "true"
 
   return headers
+}
+
+const vscodeIdentityHeaders = (state: State) => ({
+  "copilot-integration-id": "vscode-chat",
+  "editor-version": `vscode/${state.vsCodeVersion}`,
+  "editor-plugin-version": EDITOR_PLUGIN_VERSION,
+  "user-agent": USER_AGENT,
+  "openai-intent": "conversation-panel",
+  "x-github-api-version": API_VERSION,
+  "x-vscode-user-agent-library-version": "electron-fetch",
+})
+// Client identity sent by Copilot CLI 1.0.105, captured 2026-11-05 through a
+// logging proxy. Opt-in (`--cli-profile`) so it can be tried and dropped if
+// the impersonation proves unadvised. Per-prompt interaction/task ids are not
+// reproduced; the session and machine ids last for this process.
+const CLI_PROFILE_HEADERS = {
+  "copilot-integration-id": "copilot-developer-cli",
+  "copilot-harness-id": "copilot-sdk",
+  "editor-version": "copilot/1.0.105",
+  "user-agent":
+    "copilot/1.0.105 (linux v24.22.1) term/unknown client/github/cli",
+  "x-github-api-version": "2026-08-01",
+  "x-client-machine-id": randomUUID(),
+  "x-client-session-id": randomUUID(),
+  "x-github-repository-host": "__no_repository__",
+  "x-github-repository-nwo": "__no_repository__",
 }
 
 export const GITHUB_API_BASE_URL = "https://api.github.com"

@@ -14,6 +14,8 @@ export interface State {
   manualApprove: boolean
   rateLimitWait: boolean
   showToken: boolean
+  // Send Copilot CLI 1.0.105 client-identity headers instead of VS Code's
+  cliProfile: boolean
 
   // Rate limiting configuration
   rateLimitSeconds?: number
@@ -26,4 +28,5 @@ export const state: State = {
   manualApprove: false,
   rateLimitWait: false,
   showToken: false,
+  cliProfile: false,
 }

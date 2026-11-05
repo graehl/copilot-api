@@ -165,6 +165,7 @@ The following command line options are available for the `start` command:
 | --claude-code  | Generate a command to launch Claude Code with Copilot API config              | false      | -c    |
 | --show-token   | Show GitHub and Copilot tokens on fetch and refresh                           | false      | none  |
 | --proxy-env    | Initialize proxy from environment variables                                   | false      | none  |
+| --cli-profile  | Identify as Copilot CLI 1.0.105 instead of VS Code Copilot Chat (experimental) | false      | none  |
 
 `--context-tier default` preserves the catalog's normal limits. In
 `long_context` mode, the proxy derives each eligible model's prompt and total
@@ -176,6 +177,13 @@ identity; when this proxy's raw catalog omits it, the proxy fails rather than
 borrowing another client's metadata. This option changes the capabilities
 advertised by this proxy; it does not add an undocumented tier field to
 upstream inference requests.
+
+`--cli-profile` sends the client-identity headers observed from Copilot CLI
+1.0.105 (integration id `copilot-developer-cli`, API version `2026-08-01`,
+CLI user agent) on Copilot API calls, including the model catalog, so the
+advertised models may differ. GitHub token exchange still uses the default
+identity. It exists to test whether the CLI identity changes behavior;
+impersonating another client may be unsupported, so it is off by default.
 
 ### Auth Command Options
 
