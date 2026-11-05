@@ -31,7 +31,7 @@ A reverse-engineered proxy for the GitHub Copilot API that exposes it as an Open
 
 ## Features
 
-- **OpenAI & Anthropic Compatibility**: Exposes GitHub Copilot as an OpenAI-compatible (`/v1/chat/completions`, `/v1/models`, `/v1/embeddings`) and Anthropic-compatible (`/v1/messages`) API.
+- **OpenAI & Anthropic Compatibility**: Exposes GitHub Copilot as an OpenAI-compatible (`/v1/chat/completions`, `/v1/responses`, `/v1/models`, `/v1/embeddings`) and Anthropic-compatible (`/v1/messages`) API.
 - **Claude Code Integration**: Easily configure and launch [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) to use Copilot as its backend with a simple command-line flag (`--claude-code`).
 - **Usage Dashboard**: A web-based dashboard to monitor your Copilot API usage, view quotas, and see detailed statistics.
 - **Rate Limit Control**: Manage API usage with rate-limiting options (`--rate-limit`) and a waiting mechanism (`--wait`) to prevent errors from rapid requests.
@@ -198,11 +198,19 @@ The server exposes several endpoints to interact with the Copilot API. It provid
 
 These endpoints mimic the OpenAI API structure.
 
-| Endpoint                    | Method | Description                                               |
-| --------------------------- | ------ | --------------------------------------------------------- |
-| `POST /v1/chat/completions` | `POST` | Creates a model response for the given chat conversation. |
-| `GET /v1/models`            | `GET`  | Lists the currently available models.                     |
-| `POST /v1/embeddings`       | `POST` | Creates an embedding vector representing the input text.  |
+| Endpoint                    | Method | Description                                                |
+| --------------------------- | ------ | ---------------------------------------------------------- |
+| `POST /v1/chat/completions` | `POST` | Creates a model response for the given chat conversation.  |
+| `GET /v1/models`            | `GET`  | Lists the currently available models.                      |
+| `POST /v1/embeddings`       | `POST` | Creates an embedding vector representing the input text.   |
+| `POST /v1/responses`        | `POST` | Forwards an OpenAI Responses request to Copilot unchanged. |
+
+`POST /v1/responses` (also `/responses`) passes the body and the JSON or
+SSE reply through without translation, so newer fields such as `custom`
+tools, `text.verbosity`, and Copilot's `copilot_usage` survive. It
+rejects models whose catalog entry lacks `/responses`. `X-Initiator`
+is taken from the client when sent, otherwise `user` only when the
+newest input item is a user message.
 
 `GET /v1/models` includes `X-Copilot-API: 1` so compatible clients can
 identify this proxy without inferring its implementation from model names,

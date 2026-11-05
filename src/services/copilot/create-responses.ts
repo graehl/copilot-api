@@ -212,6 +212,32 @@ export async function createResponses(
   return (await response.json()) as ResponsesResult
 }
 
+// Pass-through for OpenAI Responses clients: the body is forwarded unchanged
+// and the upstream response (JSON or SSE) is returned as-is, so fields this
+// proxy has no types for still survive the round trip.
+export async function forwardResponses(
+  body: string,
+  vision: boolean,
+  initiator: "agent" | "user",
+): Promise<Response> {
+  if (!state.copilotToken) throw new Error("Copilot token not found")
+
+  const response = await fetch(`${copilotBaseUrl(state)}/responses`, {
+    method: "POST",
+    headers: {
+      ...copilotHeaders(state, vision),
+      "X-Initiator": initiator,
+    },
+    body,
+  })
+
+  if (!response.ok) {
+    throw new HTTPError("Failed to create Responses request", response)
+  }
+
+  return response
+}
+
 function hasVisionInput(payload: ResponsesPayload): boolean {
   return payload.input.some(
     (item) =>
