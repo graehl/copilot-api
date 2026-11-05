@@ -31,7 +31,7 @@ export const createChatCompletions = async (
   const response = await fetch(`${copilotBaseUrl(state)}/chat/completions`, {
     method: "POST",
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(endWithNonAssistantForGemini(payload)),
   })
 
   if (!response.ok) {
@@ -44,6 +44,28 @@ export const createChatCompletions = async (
   }
 
   return (await response.json()) as ChatCompletionResponse
+}
+
+const GEMINI_CONTINUE_PROMPT = "Continue."
+
+// Copilot rejects a Gemini request whose last message is from the assistant
+// (`invalid_message_role`); a trailing user or tool message is accepted. A
+// trailing assistant text (e.g. an Anthropic prefill) is kept and followed by
+// a minimal user turn asking the model to continue. A trailing assistant
+// tool call is left alone: it is malformed without its tool results anyway.
+export function endWithNonAssistantForGemini(
+  payload: ChatCompletionsPayload,
+): ChatCompletionsPayload {
+  if (!payload.model.toLowerCase().startsWith("gemini")) return payload
+  const last = payload.messages.at(-1)
+  if (last?.role !== "assistant" || last.tool_calls?.length) return payload
+  return {
+    ...payload,
+    messages: [
+      ...payload.messages,
+      { role: "user", content: GEMINI_CONTINUE_PROMPT },
+    ],
+  }
 }
 
 // Streaming types
