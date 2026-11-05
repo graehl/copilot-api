@@ -195,6 +195,27 @@ describe("Anthropic to OpenAI translation logic", () => {
     expect(assistantMessage?.tool_calls).toHaveLength(1)
     expect(assistantMessage?.tool_calls?.[0].function.name).toBe("get_weather")
   })
+
+  test("keeps a trailing mid-conversation system message as system", () => {
+    // Claude Code's environment block arrives this way; Gemini rejects a
+    // request whose last message is from the assistant.
+    const openAIPayload = translateToOpenAI({
+      model: "gemini-4-argon",
+      messages: [
+        { role: "user", content: "Say hi." },
+        {
+          role: "system",
+          content: [{ type: "text", text: "# Environment\nlinux" }],
+        },
+      ],
+      max_tokens: 100,
+    })
+    expect(isValidChatCompletionRequest(openAIPayload)).toBe(true)
+    expect(openAIPayload.messages).toEqual([
+      { role: "user", content: "Say hi." },
+      { role: "system", content: "# Environment\nlinux" },
+    ])
+  })
 })
 
 describe("OpenAI Chat Completion v1 Request Payload Validation with Zod", () => {

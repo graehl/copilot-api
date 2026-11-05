@@ -64,11 +64,11 @@ function translateAnthropicMessagesToOpenAI(
 ): Array<Message> {
   const systemMessages = handleSystemPrompt(system)
 
-  const otherMessages = anthropicMessages.flatMap((message) =>
-    message.role === "user" ?
-      handleUserMessage(message)
-    : handleAssistantMessage(message),
-  )
+  const otherMessages = anthropicMessages.flatMap((message) => {
+    if (message.role === "user") return handleUserMessage(message)
+    if (message.role === "system") return handleSystemPrompt(message.content)
+    return handleAssistantMessage(message)
+  })
 
   return [...systemMessages, ...otherMessages]
 }

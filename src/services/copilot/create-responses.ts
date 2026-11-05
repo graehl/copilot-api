@@ -57,7 +57,7 @@ export type ResponseTool = ResponseFunctionTool | ResponseWebSearchTool
 
 export interface ResponseInputMessage {
   type: "message"
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system"
   content: string | Array<ResponseInputContent>
 }
 

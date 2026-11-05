@@ -126,7 +126,20 @@ export interface AnthropicAssistantMessage {
   content: string | Array<AnthropicAssistantContentBlock>
 }
 
-export type AnthropicMessage = AnthropicUserMessage | AnthropicAssistantMessage
+/**
+ * Mid-conversation system context. Claude Code places its environment
+ * block here, after the user turn; translating it as anything else turns
+ * it into an assistant prefill.
+ */
+export interface AnthropicSystemMessage {
+  role: "system"
+  content: string | Array<AnthropicTextBlock>
+}
+
+export type AnthropicMessage =
+  | AnthropicUserMessage
+  | AnthropicAssistantMessage
+  | AnthropicSystemMessage
 
 export interface AnthropicClientTool {
   name: string

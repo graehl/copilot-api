@@ -202,6 +202,26 @@ describe("Anthropic to Responses translation", () => {
   })
 })
 
+describe("Anthropic system-role message to Responses", () => {
+  test("keeps a trailing mid-conversation system message as system", () => {
+    const translated = translateAnthropicToResponses({
+      model: "gpt-5.6-terra",
+      messages: [
+        { role: "user", content: "Say hi." },
+        {
+          role: "system",
+          content: [{ type: "text", text: "# Environment\nlinux" }],
+        },
+      ],
+      max_tokens: 100,
+    })
+    expect(translated.input).toEqual([
+      { type: "message", role: "user", content: "Say hi." },
+      { type: "message", role: "system", content: "# Environment\nlinux" },
+    ])
+  })
+})
+
 describe("Responses to Anthropic translation", () => {
   test("round-trips encrypted reasoning and tool calls", () => {
     const response: ResponsesResult = {

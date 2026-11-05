@@ -79,8 +79,10 @@ export function translateAnthropicToResponses(
 }
 
 function translateMessage(message: AnthropicMessage): Array<ResponseInputItem> {
-  if (message.role === "user") {
-    return translateUserMessage(message)
+  if (message.role === "user") return translateUserMessage(message)
+  if (message.role === "system") {
+    const text = translateSystem(message.content)
+    return text ? [createMessage("system", text)] : []
   }
   return translateAssistantMessage(message)
 }

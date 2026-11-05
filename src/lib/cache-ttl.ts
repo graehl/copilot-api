@@ -1,5 +1,6 @@
 import type {
   AnthropicCacheControl,
+  AnthropicMessage,
   AnthropicMessagesPayload,
 } from "~/routes/messages/anthropic-types"
 
@@ -73,9 +74,12 @@ export function applyDefaultCacheTtl(
   const tools = payload.tools ? stampAll(payload.tools, ttl) : payload.tools
   // Branch on role so each side narrows to one content-block union; a single
   // shared branch would widen to an array of both and fail to type.
-  const messages = payload.messages.map((message) => {
+  const messages = payload.messages.map((message): AnthropicMessage => {
     if (!Array.isArray(message.content)) return message
     if (message.role === "user") {
+      return { ...message, content: stampAll(message.content, ttl) }
+    }
+    if (message.role === "system") {
       return { ...message, content: stampAll(message.content, ttl) }
     }
     return { ...message, content: stampAll(message.content, ttl) }
