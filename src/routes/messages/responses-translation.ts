@@ -200,22 +200,26 @@ function translateToolResult(
   return {
     type: "function_call_output",
     call_id: block.tool_use_id,
-    output: stringifyToolResult(block.content),
+    output: translateToolResultContent(block.content),
     status: block.is_error ? "incomplete" : "completed",
   }
 }
 
-function stringifyToolResult(
+// Images must stay structured: inlining base64 as text turns a ~500 KB
+// screenshot into hundreds of thousands of prompt tokens, which Copilot
+// rejects with an opaque 400.
+function translateToolResultContent(
   content: AnthropicToolResultBlock["content"],
-): string {
+): ResponseFunctionCallOutput["output"] {
   if (typeof content === "string") return content
-  return content
-    .map((block) =>
-      block.type === "text" ?
-        block.text
-      : `[image:${block.source.media_type};base64,${block.source.data}]`,
-    )
-    .join("\n")
+  if (content.every((block) => block.type === "text")) {
+    return content.map((block) => block.text).join("\n")
+  }
+  return content.map((block) =>
+    block.type === "text" ?
+      { type: "input_text", text: block.text }
+    : translateImage(block),
+  )
 }
 
 function translateThinking(

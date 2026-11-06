@@ -7,6 +7,7 @@ import {
   translateAnthropicToResponses,
   translateResponsesToAnthropic,
 } from "~/routes/messages/responses-translation"
+import { hasInputImage } from "~/routes/responses/handler"
 
 describe("Anthropic to Responses translation", () => {
   test("preserves system context, assistant prefill, tools, and effort", () => {
@@ -153,7 +154,63 @@ describe("Anthropic to Responses translation", () => {
       },
     ])
   })
+})
 
+describe("Anthropic to Responses translation: tool-result images", () => {
+  test("keeps tool-result images structured, not inlined as base64 text", () => {
+    const payload: AnthropicMessagesPayload = {
+      model: "grok-4.7",
+      messages: [
+        { role: "user", content: "Look at the screenshot." },
+        {
+          role: "assistant",
+          content: [
+            { type: "tool_use", id: "tool_1", name: "Read", input: {} },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: "tool_1",
+              content: [
+                { type: "text", text: "shot.png" },
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: "image/png",
+                    data: "AAAA",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      max_tokens: 1024,
+    }
+
+    const translated = translateAnthropicToResponses(payload)
+    expect(translated.input.at(-1)).toEqual({
+      type: "function_call_output",
+      call_id: "tool_1",
+      output: [
+        { type: "input_text", text: "shot.png" },
+        {
+          type: "input_image",
+          image_url: "data:image/png;base64,AAAA",
+          detail: "auto",
+        },
+      ],
+      status: "completed",
+    })
+    expect(hasInputImage(translated.input)).toBeTrue()
+  })
+})
+
+describe("Anthropic to Responses translation: tools and effort", () => {
   test("rejects web search exclusions that Responses cannot enforce", () => {
     const payload: AnthropicMessagesPayload = {
       model: "gpt-5.6-terra",

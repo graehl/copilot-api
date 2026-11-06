@@ -72,7 +72,7 @@ export interface ResponseFunctionCall {
 export interface ResponseFunctionCallOutput {
   type: "function_call_output"
   call_id: string
-  output: string
+  output: string | Array<ResponseInputContent>
   status: "completed" | "incomplete"
 }
 
@@ -239,10 +239,13 @@ export async function forwardResponses(
 }
 
 function hasVisionInput(payload: ResponsesPayload): boolean {
-  return payload.input.some(
-    (item) =>
-      item.type === "message"
-      && Array.isArray(item.content)
-      && item.content.some((block) => block.type === "input_image"),
-  )
+  return payload.input.some((item) => {
+    let content: ResponseFunctionCallOutput["output"] | undefined
+    if (item.type === "message") content = item.content
+    if (item.type === "function_call_output") content = item.output
+    return (
+      Array.isArray(content)
+      && content.some((block) => block.type === "input_image")
+    )
+  })
 }

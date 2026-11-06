@@ -80,19 +80,21 @@ export function inferInitiator(input: unknown): "agent" | "user" {
   return isMessage && item.role === "user" ? "user" : "agent"
 }
 
+// Images arrive in message `content` or in a function_call_output's `output`.
 export function hasInputImage(input: unknown): boolean {
   if (!Array.isArray(input)) return false
   return input.some((item: unknown) => {
     if (typeof item !== "object" || item === null) return false
-    const content = (item as { content?: unknown }).content
-    return (
-      Array.isArray(content)
-      && content.some(
-        (block: unknown) =>
-          typeof block === "object"
-          && block !== null
-          && (block as { type?: unknown }).type === "input_image",
-      )
+    const { content, output } = item as { content?: unknown; output?: unknown }
+    return [content, output].some(
+      (parts) =>
+        Array.isArray(parts)
+        && parts.some(
+          (block: unknown) =>
+            typeof block === "object"
+            && block !== null
+            && (block as { type?: unknown }).type === "input_image",
+        ),
     )
   })
 }
